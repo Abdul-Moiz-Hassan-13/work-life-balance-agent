@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Work-Life Balance Agent</title>
+
+    <!-- ✅ Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+</head>
+<body class="bg-gradient-to-br from-indigo-100 to-indigo-50 min-h-screen p-10">
+
+    <div class="max-w-2xl mx-auto bg-white p-10 rounded-2xl shadow-xl">
+        
+        <!-- Title -->
+        <h1 class="text-4xl font-bold text-center text-indigo-600 mb-10">
+            Work-Life Balance Agent
+        </h1>
+
+        <!-- Input -->
+        <label class="text-lg font-semibold block mb-2 mt-4">Describe your routine:</label>
+        
+        <textarea 
+            id="userInput"
+            class="w-full h-36 p-4 border border-gray-300 rounded-xl text-gray-700 text-lg focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+            placeholder="Example: I work from 9AM to 9PM and sleep at 2AM"
+        ></textarea>
+
+        <!-- Button -->
+        <button
+            id="analyzeBtn"
+            onclick="sendRequest()"
+            class="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl text-lg font-semibold transition flex items-center justify-center gap-3"
+        >
+            <span id="btnText">Analyze</span>
+            <svg id="spinner" class="w-6 h-6 animate-spin hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="white" stroke-width="4"></circle>
+                <path class="opacity-75" fill="white"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z">
+                </path>
+            </svg>
+        </button>
+
+
+        <!-- Result -->
+        <div id="result-container" class="hidden mt-10 p-6 bg-gray-50 rounded-xl shadow-md">
+            <h2 class="text-2xl font-bold text-indigo-700 mb-4">Your Work-Life Balance Report</h2>
+
+            <p id="summary" class="text-lg mb-6"></p>
+
+            <div id="risk-box" class="px-4 py-2 rounded-lg text-white font-semibold w-fit mb-6"></div>
+
+            <h3 class="text-xl font-semibold mb-2">Key Issues Identified</h3>
+            <ul id="signals-list" class="list-disc pl-6 mb-6"></ul>
+
+            <h3 class="text-xl font-semibold mb-2">Recommended Improvements</h3>
+            <div id="recommendations"></div>
+        </div>
+
+    </div>
+
+<script>
+
+    async function sendRequest() {
+        const userInput = document.getElementById("userInput").value.trim();
+        
+        const resultBox = document.getElementById("result-container");
+        const btn = document.getElementById("analyzeBtn");
+        const btnText = document.getElementById("btnText");
+        const spinner = document.getElementById("spinner");
+
+        if (!userInput) {
+            alert("Please enter your routine first.");
+            return;
+        }
+
+        // Activate loading UI
+        btn.disabled = true;
+        btn.classList.add("opacity-70");
+        btnText.textContent = "Analyzing...";
+        spinner.classList.remove("hidden");
+        resultBox.classList.add("hidden");
+
+        const payload = {
+            messages: [
+                { role: "user", content: userInput }
+            ]
+        };
+
+        try {
+            const response = await fetch("http://127.0.0.1:8000/analyze", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            // Restore button
+            btn.disabled = false;
+            btn.classList.remove("opacity-70");
+            btnText.textContent = "Analyze";
+            spinner.classList.add("hidden");
+
+            renderResult(result);
+
+        } catch (err) {
+            btn.disabled = false;
+            btn.classList.remove("opacity-70");
+            btnText.textContent = "Analyze";
+            spinner.classList.add("hidden");
+            
+            alert("Error: " + err);
+        }
+    }
+
+    /* =====================================================
+       FORMAT & DISPLAY RESULT
+    ===================================================== */
+
+    function renderResult(response) {
+        const data = response.data.message;
+
+        const resultBox = document.getElementById("result-container");
+        resultBox.classList.remove("hidden");
+
+        document.getElementById("summary").textContent = data.summary;
+
+        // Risk badge
+        const riskBox = document.getElementById("risk-box");
+        riskBox.textContent = data.risk_level.toUpperCase();
+
+        riskBox.className = "px-4 py-2 rounded-lg text-white font-semibold w-fit mb-6";
+
+        if (data.risk_level === "high") riskBox.classList.add("bg-red-600");
+        else if (data.risk_level === "medium") riskBox.classList.add("bg-yellow-500");
+        else riskBox.classList.add("bg-green-600");
+
+        // Signals list
+        const signalsList = document.getElementById("signals-list");
+        signalsList.innerHTML = "";
+        data.signals.forEach(s => {
+            const li = document.createElement("li");
+            li.textContent = s;
+            li.classList.add("text-lg");
+            signalsList.appendChild(li);
+        });
+
+        // Recommendations
+        const recBox = document.getElementById("recommendations");
+        recBox.innerHTML = "";
+
+        data.recommendations.forEach(rec => {
+            recBox.innerHTML += `
+                <div class="bg-indigo-50 border-l-4 border-indigo-600 p-4 rounded-lg mb-4">
+                    <h4 class="text-indigo-700 font-bold">${rec.category.toUpperCase()}</h4>
+                    <p class="text-gray-700">${rec.advice}</p>
+                    <p class="text-sm mt-2"><strong>Priority:</strong> ${rec.priority}</p>
+                </div>
+            `;
+        });
+    }
+
+</script>
+
+</body>
+</html>

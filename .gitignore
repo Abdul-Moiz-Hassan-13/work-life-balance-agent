@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment
+.env
+*.env
+
+# OS files
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+Temp/
+
+# Do not track package init files
+__init__.py
