@@ -14,7 +14,6 @@ class AgentState(TypedDict):
     user_context: Optional[Dict[str, Any]]
     analysis: Optional[Dict[str, Any]]
 
-
 # -----------------------------------------
 # 2. System Prompt Template
 # -----------------------------------------
@@ -51,7 +50,6 @@ CRITICAL RULES:
 Your entire response MUST be exactly one JSON object.
 """
 
-
 # -----------------------------------------
 # JSON Repair Helper
 # -----------------------------------------
@@ -80,7 +78,6 @@ def repair_json(invalid_text: str) -> dict:
         ]
     }
 
-
 # -----------------------------------------
 # 3. Node: Analyzer (Groq Version)
 # -----------------------------------------
@@ -100,7 +97,6 @@ def work_life_balance_analyzer(state: AgentState) -> AgentState:
     response = llm.invoke(messages)
     raw_output = response.content
 
-    # Try parsing JSON
     try:
         parsed = json.loads(raw_output)
     except Exception:
@@ -108,7 +104,6 @@ def work_life_balance_analyzer(state: AgentState) -> AgentState:
 
     state["analysis"] = parsed
     return state
-
 
 # -----------------------------------------
 # 4. Build the Graph
@@ -123,6 +118,4 @@ def build_agent():
 
     return graph.compile()
 
-
-# Final agent app
 agent_app = build_agent()

@@ -16,7 +16,6 @@ app = FastAPI(
     version="1.0"
 )
 
-
 # ============================================================
 # 2. CORS MIDDLEWARE
 # ============================================================
@@ -31,7 +30,6 @@ app.add_middleware(
 # ============================================================
 # 3. REQUEST FORMAT (Supervisor → Agent)
 # ============================================================
-
 class Role(str, Enum):
     USER = "user"
     ASSISTANT = "assistant"
@@ -46,11 +44,9 @@ class Message(BaseModel):
 class AgentRequest(BaseModel):
     messages: List[Message]
 
-
 # ============================================================
 # 4. RESPONSE FORMAT (Agent → Supervisor)
 # ============================================================
-
 class Status(str, Enum):
     SUCCESS = "success"
     ERROR = "error"
@@ -62,11 +58,9 @@ class AgentResponse(BaseModel):
     data: Optional[Dict[str, Any]] = None
     error_message: Optional[str] = None
 
-
 # ============================================================
 # 5. Health Check
 # ============================================================
-
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
@@ -75,10 +69,9 @@ def health_check():
 # ============================================================
 # 6. ANALYZE ENDPOINT — MAIN ENTRY
 # ============================================================
-@app.post("/analyze", response_model=AgentResponse)
+@app.post("/api/patient/work-life-balance/analyze", response_model=AgentResponse)
 def analyze(request: AgentRequest):
     try:
-        # Extract the latest user message
         user_messages = [m.content for m in request.messages if m.role == Role.USER]
 
         if not user_messages:
@@ -91,20 +84,16 @@ def analyze(request: AgentRequest):
 
         latest_user_input = user_messages[-1]
 
-        # Build LangGraph state
         state = {
             "user_prompt": latest_user_input,
             "user_context": None,
             "analysis": None
         }
 
-        # Run your agent
         result = agent_app.invoke(state)
 
-        # Extract analysis
         agent_output = result.get("analysis")
 
-        # IMPORTANT FIX — wrap inside {"message": ...}
         return AgentResponse(
             agent_name="work-life-agent",
             status=Status.SUCCESS,
